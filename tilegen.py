@@ -13,6 +13,7 @@ FILENAME = "output.png"
 BACKTRACK_SAVE_TIME = np.sqrt(np.multiply(GEN_SIZE[0],GEN_SIZE[1]).astype(np.float32)).astype(np.int64)
 
 #how many times to retry backtracking from a specific point
+#after this, fall back to an earlier state
 MAX_RETRY_COUNT = 16
 
 def remove_if(tensor, condition):
@@ -41,42 +42,29 @@ stuff = np.load(filename)
 tiles = stuff['tiles']
 indices = stuff['indices']
 
-print("tiles", tiles.shape, tiles.dtype)
-print("indices", indices.shape, indices.dtype)
-
 empty_index = indices[0,0]
 max_index = np.amax(indices)
-print("max index: ", max_index)
 
 n_up = gen_neighbors(indices[1:,:],indices[:-1,:], empty_index, max_index)
 n_down = gen_neighbors(indices[:-1,:],indices[1:,:], empty_index, max_index)
 n_left = gen_neighbors(indices[:,1:],indices[:,:-1], empty_index, max_index)
 n_right = gen_neighbors(indices[:,:-1],indices[:,1:], empty_index, max_index)
-print("ns", n_up.shape, n_down.shape, n_left.shape, n_right.shape)
-
 neighbors = np.stack([n_up, n_down, n_left, n_right])
-print("neighbors", neighbors.shape)
 
 rowsums = np.sum(neighbors,axis=-1)
 badrows = []
 for n in range(rowsums.shape[0]):
     for r in range(rowsums.shape[1]):
         if rowsums[n,r] == 0:
-            print(f"{n}:{r} is empty!")
             badrows.append(r)
-
-badrows = np.unique(badrows)
-
-print(badrows)
-
-exit(0)
+if len(badrows) > 0:
+    badrows = np.unique(badrows)
+    print(f"Warning: {badrows.shape[0]} tile types with no neighbors in at least one direction!")
 
 num_tiles = tiles.shape[0]
 
 valid = np.ones([GEN_SIZE[0],GEN_SIZE[1],num_tiles],dtype=np.uint8)
 done = np.zeros(GEN_SIZE, dtype=np.int64)
-print("valid", valid.shape)
-print("done", done.shape)
 
 neighbor_indices = np.array([[-1,0],[1,0],[0,-1],[0,1]])+GEN_SIZE
 np.set_printoptions(suppress=True)
