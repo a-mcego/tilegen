@@ -18,5 +18,3 @@ def extract_tiles(filename, tilesize):
     print(tiles.shape, indices.shape)
 
     np.savez_compressed(f"{filename}.npz",tiles=tiles,indices=indices)
-
-extract_tiles("pokemon_firered_leafgreen.png", [16,16])
